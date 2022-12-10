@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <unordered_map>
 
 using namespace std;
 
@@ -10,6 +11,42 @@ void primeiraPassagem(string fname);
 void segundaPassagem();
 vector<string> splitString(string input);
 string removeComments(string input);
+
+int memory = 0;
+int line_counter = 1;
+unordered_map<string, int> table;
+unordered_map<string, vector<int>> opcode_table = {
+    {"ADD", {1, 2}},
+    {"SUB", {2, 2}},
+    {"MULT", {3, 2}},
+    {"DIV", {4, 2}},
+    {"JMP", {5, 2}},
+    {"JMPN", {6, 2}},
+    {"JMPP", {7, 2}},
+    {"JMPZ", {8, 2}},
+    {"COPY", {9, 3}},
+    {"LOAD", {10, 2}},
+    {"STORE", {11, 2}},
+    {"INPUT", {12, 2}},
+    {"OUTPUT", {13, 2}},
+    {"STOP", {14, 1}}};
+
+unordered_map<string, int> directive_table = {
+    {"CONST", 1},
+    {"SPACE", 1},
+    {"SECTION", 0},
+    {"EQU", 0},
+    {"IF", 0},
+    {"MACRO", 0},
+    {"ENDMACRO", 0}};
+
+void print_symbol_table()
+{
+    for (auto const &pair : table)
+    {
+        cout << "{" << pair.first << ": " << pair.second << "}" << endl;
+    }
+}
 
 int main(int argc, char **argv)
 { // argv[0] é sempre o nome do programa
@@ -25,6 +62,10 @@ int main(int argc, char **argv)
             cout << endl;
 
             primeiraPassagem(argv[2]);
+
+            cout << endl;
+            cout << endl;
+            print_symbol_table();
         }
         else if (strncmp(argv[1], "-m", 2) == 0)
         {
@@ -42,26 +83,80 @@ int main(int argc, char **argv)
     return 0;
 }
 
+void updateSymbolTable(string line)
+{
+    // Split the line on spaces
+    vector<string> tokens = splitString(line);
+    // Check if the first token is a label
+
+    if (tokens[0].back() == ':')
+    {
+        // cout << "updateSymbolTable init" << endl;
+        string label = tokens[0].substr(0, tokens[0].length() - 1);
+        // cout << "label: " << label << endl;
+
+        // Check if label already exists inside the table map
+        if (table.find(label) != table.end())
+        {
+            cout << "Erro semântico na linha " << line_counter << ": Rótulo já existente" << endl;
+            exit(1);
+        }
+        // Add the label to the symbol table
+        table[label] = memory;
+        tokens.erase(tokens.begin());
+    }
+
+    // cout << "after loop" << endl;
+    // print every element of the array
+    for (int i = 0; i < tokens.size(); i++)
+    {
+        cout << tokens[i] << " ";
+    }
+
+    // cout << "after loop2" << endl;
+    // Incrementar valores dos contadores
+    line_counter++;
+    // memory += opcode_table["ADD"][1];
+    // cout << "Rótulo: {" << tokens[0] << "}" << endl;
+
+    if (opcode_table.find(tokens[0]) != opcode_table.end())
+    {
+        memory += opcode_table[tokens[0]][1];
+    }
+    else if (directive_table.find(tokens[0]) != directive_table.end())
+    {
+        memory += directive_table[tokens[0]];
+    }
+    else
+    {
+        cout << "Erro na linha " << line_counter << ": Instrução inexistente" << endl;
+    }
+
+    //  cout << "after loop3" << endl;
+}
+
 void primeiraPassagem(string fname)
 {
+    cout << "primeiraPassagem init" << endl;
     string fname_asm = static_cast<string>(fname) + ".asm";
 
     // opens file
     ifstream file(fname_asm);
-    string line;
-    while (getline(file, line))
+    string line_raw;
+
+    cout << "while init" << endl;
+
+    while (getline(file, line_raw))
     {
         // separa a linha em rótulo, operação, operandos, comentários
 
-        string line2 = removeComments(line);
-        vector token = splitString(line2);
+        string line = removeComments(line_raw);
 
-        for (int i = 0; i < token.size(); i++)
-        {
-            cout << token[i] << " ";
-        }
+        // cout << "after removeComments" << endl;
         cout << endl;
-        // cout << line << endl;
+
+        // creates a symbol table
+        updateSymbolTable(line);
     }
 }
 
@@ -69,12 +164,18 @@ vector<string> splitString(string input)
 {
     vector<string> tokens;
     // Split the string on spaces, commas, and semicolons
-    string delimiters = " ,;";
+    string delimiters = " ,";
     size_t pos = input.find_first_of(delimiters);
     while (pos != string::npos)
     {
         // Add the token to the vector
         tokens.push_back(input.substr(0, pos));
+
+        // Remove extra spaces, line breaks, tabs:
+        while (input[pos + 1] == ' ' || input[pos + 1] == '\t' || input[pos + 1] == '\n')
+        {
+            input.erase(pos + 1, 1);
+        }
 
         // Remove the token from the original string
         input.erase(0, pos + 1);
