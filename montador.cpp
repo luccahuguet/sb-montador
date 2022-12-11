@@ -8,12 +8,13 @@
 using namespace std;
 
 void primeiraPassagem(string fname);
-void segundaPassagem();
+void segundaPassagem(string fname);
 vector<string> splitString(string input);
 string removeComments(string input);
 
 int memory = 0;
 int line_counter = 1;
+string machine_code= "";
 unordered_map<string, int> table;
 unordered_map<string, vector<int>> opcode_table = {
     {"ADD", {1, 2}},
@@ -85,7 +86,7 @@ int main(int argc, char **argv)
 
 void updateSymbolTable(string line)
 {
-    // Split the line on spaces
+    // Split the line elements
     vector<string> tokens = splitString(line);
     // Check if the first token is a label
 
@@ -106,18 +107,14 @@ void updateSymbolTable(string line)
         tokens.erase(tokens.begin());
     }
 
-    // cout << "after loop" << endl;
     // print every element of the array
     for (int i = 0; i < tokens.size(); i++)
     {
         cout << tokens[i] << " ";
     }
 
-    // cout << "after loop2" << endl;
     // Incrementar valores dos contadores
     line_counter++;
-    // memory += opcode_table["ADD"][1];
-    // cout << "Rótulo: {" << tokens[0] << "}" << endl;
 
     if (opcode_table.find(tokens[0]) != opcode_table.end())
     {
@@ -157,6 +154,57 @@ void primeiraPassagem(string fname)
 
         // creates a symbol table
         updateSymbolTable(line);
+    }
+}
+
+void generateCode(string line)
+{
+    // Separa elementos da linha
+    vector<string> tokens = splitString(line);
+
+    // Iterar pelos elementos da linha
+    for (int i = 0; i < tokens.size(); i++)
+    {
+        // Remover do vetor se o elemento for definição de rótulo
+        if(tokens[0].back() == ':')
+        {
+            tokens.erase(tokens.begin());
+        }
+        // Esturura atual do vetor [Intrução, operando1, ...]
+        if(i == 0)
+        {
+
+            // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
+            if (opcode_table.find(tokens[0]) != opcode_table.end())
+            {
+                machine_code + to_string(opcode_table[tokens[i]][0]);
+            }
+        }
+        else{
+            // Checar número de operandos
+            // ...
+            // Se o operando for um símbolo, consultar tabela de símbolos e substituir valor (Erro caso não encontrar)
+            // ...
+        }
+
+    }
+}
+
+void segundaPassagem(string fname)
+{
+    cout << "segundaPassagem init" << endl;
+    string fname_asm = static_cast<string>(fname) + ".asm";
+
+    // opens file
+    ifstream file(fname_asm);
+    string line_raw, line;
+
+    while (getline(file, line_raw))
+    {
+        // Remover comentários
+        line = removeComments(line_raw);
+
+
     }
 }
 
