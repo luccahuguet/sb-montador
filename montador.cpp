@@ -163,33 +163,47 @@ void generateCode(string line)
     vector<string> tokens = splitString(line);
 
     // Iterar pelos elementos da linha
-    for (int i = 0; i < tokens.size(); i++)
+    // Remover do vetor se o elemento for definição de rótulo
+    if (tokens[0].back() == ':')
     {
-        // Remover do vetor se o elemento for definição de rótulo
-        if (tokens[0].back() == ':')
-        {
-            tokens.erase(tokens.begin());
-        }
-        // Esturura atual do vetor [Intrução, operando1, ...]
-        if (i == 0)
-        {
+        tokens.erase(tokens.begin());
+    }
+    // Esturura atual do vetor [Intrução, operando1, ...]
 
-            // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
-            if (opcode_table.find(tokens[0]) != opcode_table.end())
-            {
-                machine_code + to_string(opcode_table[tokens[i]][0]);
-            }
-        }
-        else
+    // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
+    if (opcode_table.find(tokens[0]) != opcode_table.end())
+    {
+        machine_code + to_string(opcode_table[tokens[1]][0]);
+    }
+    else if (directive_table.find(tokens[0]) != directive_table.end())
+    {
+        // Se for diretiva, checar se é CONST ou SPACE
+        if (tokens[0] == "CONST")
         {
-            // Checar número de operandos
-            // n_op = opcode_table[tokens[0]][1];
-            // Se o operando for um símbolo, consultar tabela de símbolos e substituir valor (Erro caso não encontrar)
-            if (symbol_table.find(tokens[i]) != symbol_table.end())
-            {
-                machine_code + to_string(symbol_table[tokens[i]]);
-            }
+            // Se for CONST, adicionar valor ao código
+            machine_code + tokens[1];
         }
+        else if (tokens[0] == "SPACE")
+        {
+            // verificar numero de argumentos do space
+            // verificar se tem operação no argumento
+
+            // Se for SPACE, adicionar 0 ao código
+            machine_code + " 0";
+        }
+    }
+    else
+    {
+        cout << "Erro na linha " << line_counter << ": Instrução inexistente" << endl;
+        exit(1);
+    }
+
+    // Checar número de operandos
+    // n_op = opcode_table[tokens[0]][1];
+    // Se o operando for um símbolo, consultar tabela de símbolos e substituir valor (Erro caso não encontrar)
+    if (symbol_table.find(tokens[1]) != symbol_table.end())
+    {
+        machine_code + to_string(symbol_table[tokens[1]]);
     }
 }
 
