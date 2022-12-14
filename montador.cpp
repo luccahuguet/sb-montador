@@ -14,8 +14,8 @@ string removeComments(string input);
 
 int memory = 0;
 int line_counter = 1;
-string machine_code= "";
-unordered_map<string, int> table;
+string machine_code = "";
+unordered_map<string, int> symbol_table;
 unordered_map<string, vector<int>> opcode_table = {
     {"ADD", {1, 2}},
     {"SUB", {2, 2}},
@@ -43,7 +43,7 @@ unordered_map<string, int> directive_table = {
 
 void print_symbol_table()
 {
-    for (auto const &pair : table)
+    for (auto const &pair : symbol_table)
     {
         cout << "{" << pair.first << ": " << pair.second << "}" << endl;
     }
@@ -96,14 +96,14 @@ void updateSymbolTable(string line)
         string label = tokens[0].substr(0, tokens[0].length() - 1);
         // cout << "label: " << label << endl;
 
-        // Check if label already exists inside the table map
-        if (table.find(label) != table.end())
+        // Check if label already exists inside the symbol_table map
+        if (symbol_table.find(label) != symbol_table.end())
         {
             cout << "Erro semântico na linha " << line_counter << ": Rótulo já existente" << endl;
             exit(1);
         }
-        // Add the label to the symbol table
-        table[label] = memory;
+        // Add the label to the symbol_table
+        symbol_table[label] = memory;
         tokens.erase(tokens.begin());
     }
 
@@ -166,12 +166,12 @@ void generateCode(string line)
     for (int i = 0; i < tokens.size(); i++)
     {
         // Remover do vetor se o elemento for definição de rótulo
-        if(tokens[0].back() == ':')
+        if (tokens[0].back() == ':')
         {
             tokens.erase(tokens.begin());
         }
         // Esturura atual do vetor [Intrução, operando1, ...]
-        if(i == 0)
+        if (i == 0)
         {
 
             // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
@@ -180,13 +180,16 @@ void generateCode(string line)
                 machine_code + to_string(opcode_table[tokens[i]][0]);
             }
         }
-        else{
+        else
+        {
             // Checar número de operandos
-            // ...
+            // n_op = opcode_table[tokens[0]][1];
             // Se o operando for um símbolo, consultar tabela de símbolos e substituir valor (Erro caso não encontrar)
-            // ...
+            if (symbol_table.find(tokens[i]) != symbol_table.end())
+            {
+                machine_code + to_string(symbol_table[tokens[i]]);
+            }
         }
-
     }
 }
 
@@ -203,8 +206,6 @@ void segundaPassagem(string fname)
     {
         // Remover comentários
         line = removeComments(line_raw);
-
-
     }
 }
 
