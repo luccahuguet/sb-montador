@@ -41,6 +41,8 @@ unordered_map<string, int> directive_table = {
     {"MACRO", 0},
     {"ENDMACRO", 0}};
 
+bool first = true;
+
 void print_symbol_table()
 {
     for (auto const &pair : symbol_table)
@@ -75,6 +77,9 @@ int main(int argc, char **argv)
         else if (strncmp(argv[1], "-o", 2) == 0)
         {
             cout << "Processar tudo e criar arquivo objeto" << endl;
+            primeiraPassagem(argv[2]);
+            print_symbol_table();
+            segundaPassagem(argv[2]);
         }
         else
         {
@@ -122,14 +127,20 @@ void updateSymbolTable(string line)
     }
     else if (directive_table.find(tokens[0]) != directive_table.end())
     {
-        memory += directive_table[tokens[0]];
+        if (tokens[0] == "SPACE")
+        {
+            if (tokens.size() == 1)
+            {
+                memory += 1;
+            }
+            else
+            {
+                memory += stoi(tokens[1]);
+            }
+        }
+        else
+            memory += directive_table[tokens[0]];
     }
-    else
-    {
-        cout << "Erro na linha " << line_counter << ": Instrução inexistente" << endl;
-    }
-
-    //  cout << "after loop3" << endl;
 }
 
 void primeiraPassagem(string fname)
@@ -138,12 +149,12 @@ void primeiraPassagem(string fname)
     string fname_asm = static_cast<string>(fname) + ".asm";
 
     // opens file
-    ifstream file(fname_asm);
+    ifstream file2(fname_asm);
     string line_raw;
 
     cout << "while init" << endl;
 
-    while (getline(file, line_raw))
+    while (getline(file2, line_raw))
     {
         // separa a linha em rótulo, operação, operandos, comentários
 
@@ -155,6 +166,7 @@ void primeiraPassagem(string fname)
         // creates a symbol table
         updateSymbolTable(line);
     }
+    cout << "Primeira passagem FIM" << endl;
 }
 
 void generateCode(string line)
@@ -173,23 +185,79 @@ void generateCode(string line)
     // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
     if (opcode_table.find(tokens[0]) != opcode_table.end())
     {
-        machine_code + to_string(opcode_table[tokens[1]][0]);
+        // Checa número de argumentos passados
+        if (tokens.size() != (opcode_table[tokens[0]][1]))
+        {
+            cout << "Erro sintático na linha " << line_counter << ": Número errado de argumentos" << endl;
+            exit(1);
+        }
+        if(first)
+        {
+            machine_code += to_string(opcode_table[tokens[0]][0]);
+            first = false;
+        }
+        else machine_code += " " + to_string(opcode_table[tokens[0]][0]);
+
+        // Checar argumentos
+        int address = 0;
+        for (int i = 1; i <= opcode_table[tokens[0]][1] - 1; i++)
+        {
+            // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
+            // if string tokens[i] contains a "+":
+            if (tokens[i].find("+") != string::npos)
+            {
+                string str = "";
+                str += tokens[i][0];
+                if (symbol_table.find(str) != symbol_table.end()) // X+2
+                {
+                    address = symbol_table[str];
+                    str = "";
+                    str += tokens[i][2];
+                    machine_code += " " + to_string(address + stoi(str));
+                }
+            }
+            else
+            {
+                // Consultar tabela de símbolos
+                if (symbol_table.find(tokens[i]) != symbol_table.end())
+                {
+                    machine_code += " " + to_string(symbol_table[tokens[i]]);
+                }
+            }
+        }
     }
     else if (directive_table.find(tokens[0]) != directive_table.end())
     {
         // Se for diretiva, checar se é CONST ou SPACE
         if (tokens[0] == "CONST")
         {
-            // Se for CONST, adicionar valor ao código
-            machine_code + tokens[1];
+            if (tokens.size() != 2)
+            {
+                cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
+                exit(1);
+            }
+            // CONST, adicionar valor ao código
+            machine_code += " " + tokens[1];
         }
         else if (tokens[0] == "SPACE")
         {
             // verificar numero de argumentos do space
-            // verificar se tem operação no argumento
-
-            // Se for SPACE, adicionar 0 ao código
-            machine_code + " 0";
+            if (tokens.size() == 1)
+            {
+                machine_code += " 0";
+            }
+            else if (tokens.size() == 2)
+            {
+                for (int i = 0; i < stoi(tokens[1]); i++)
+                {
+                    machine_code += " 0";
+                }
+            }
+            else
+            {
+                cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
+                exit(1);
+            }
         }
     }
     else
@@ -197,21 +265,14 @@ void generateCode(string line)
         cout << "Erro semântico na linha " << line_counter << ": Instrução inexistente" << endl;
         exit(1);
     }
-
-    // Checar número de operandos
-    // n_op = opcode_table[tokens[0]][1];
-    // Se o operando for um símbolo, consultar tabela de símbolos e substituir valor (Erro caso não encontrar)
-    if (symbol_table.find(tokens[1]) != symbol_table.end())
-    {
-        machine_code + to_string(symbol_table[tokens[1]]);
-    }
+    line_counter++;
 }
 
 void segundaPassagem(string fname)
 {
     cout << "segundaPassagem init" << endl;
     string fname_asm = static_cast<string>(fname) + ".asm";
-
+    line_counter = 0;
     // opens file
     ifstream file(fname_asm);
     string line_raw, line;
@@ -220,7 +281,10 @@ void segundaPassagem(string fname)
     {
         // Remover comentários
         line = removeComments(line_raw);
+        generateCode(line);
     }
+    cout << "Print machine code" << endl;
+    cout << "Machine code: " << machine_code << endl;
 }
 
 vector<string> splitString(string input)
