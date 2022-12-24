@@ -194,7 +194,7 @@ void generateCode(string line)
     }
     else
     {
-        cout << "Erro na linha " << line_counter << ": Instrução inexistente" << endl;
+        cout << "Erro semântico na linha " << line_counter << ": Instrução inexistente" << endl;
         exit(1);
     }
 
