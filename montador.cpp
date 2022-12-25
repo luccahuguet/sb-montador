@@ -100,7 +100,31 @@ void updateSymbolTable(string line)
     {
         // cout << "updateSymbolTable init" << endl;
         string label = tokens[0].substr(0, tokens[0].length() - 1);
-        // cout << "label: " << label << endl;
+        // Checar erros léxicos (Caracteres especiais ou iniciado por número)
+        for(int c = 0; c < label.size(); c++)
+        {
+            // Checar se tem número como primeiro caractere do rótulo
+            if (c == 0)
+            {
+                if(label[c] >= 48 && label[c] <= 57)
+                {
+                    cout << "Erro léxico na linha " << line_counter << ": Rótulo iniciado com número" << endl;
+                    exit(1);    
+                }
+            }
+            // Checar se existe caractere especial no rótulo, exceto _
+            if(
+                !(
+                    (label[c] >= 48 && label[c] <= 57)||
+                    (label[c] >= 65 && label[c] <= 90) ||
+                    (label[c] >= 97 && label[c] <= 122)
+                ) && label[c] != 95
+            )
+            {
+                cout << "Erro léxico na linha " << line_counter << ": Rótulo com caracteres especiais" << endl;
+                exit(1);
+            }
+        }
 
         // Check if label already exists inside the symbol_table map
         if (symbol_table.find(label) != symbol_table.end())
