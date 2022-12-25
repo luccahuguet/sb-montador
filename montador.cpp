@@ -159,12 +159,13 @@ void primeiraPassagem(string fname)
         // separa a linha em rótulo, operação, operandos, comentários
 
         string line = removeComments(line_raw);
+        if (line.find_first_not_of(" \t\n") != std::string::npos)
+        { // cout << "after removeComments" << endl;
+            cout << endl;
 
-        // cout << "after removeComments" << endl;
-        cout << endl;
-
-        // creates a symbol table
-        updateSymbolTable(line);
+            // creates a symbol table
+            updateSymbolTable(line);
+        }
     }
     cout << "Primeira passagem FIM" << endl;
 }
@@ -191,12 +192,13 @@ void generateCode(string line)
             cout << "Erro sintático na linha " << line_counter << ": Número errado de argumentos" << endl;
             exit(1);
         }
-        if(first)
+        if (first)
         {
             machine_code += to_string(opcode_table[tokens[0]][0]);
             first = false;
         }
-        else machine_code += " " + to_string(opcode_table[tokens[0]][0]);
+        else
+            machine_code += " " + to_string(opcode_table[tokens[0]][0]);
 
         // Checar argumentos
         int address = 0;
