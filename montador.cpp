@@ -204,10 +204,13 @@ void generateCode(string line)
     // Remover do vetor se o elemento for definição de rótulo
     if (tokens[0].back() == ':')
     {
-        if (tokens[1].back() == ':')
+        if(tokens.size() > 1)
         {
-            cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
-            exit(1);
+            if (tokens[1].back() == ':')
+            {
+                cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
+                exit(1);
+            }
         }
         tokens.erase(tokens.begin());
     }
