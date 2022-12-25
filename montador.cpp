@@ -42,6 +42,7 @@ unordered_map<string, int> directive_table = {
     {"ENDMACRO", 0}};
 
 bool first = true;
+bool text_section = false;
 
 void print_symbol_table()
 {
@@ -268,6 +269,12 @@ void generateCode(string line)
                 exit(1);
             }
         }
+        else if (tokens[0] == "SECTION"){
+            if (tokens.size() > 1)
+            {
+                if (tokens[1] == "TEXT") text_section = true;
+            }
+        }
     }
     else
     {
@@ -291,6 +298,11 @@ void segundaPassagem(string fname)
         // Remover comentários
         line = removeComments(line_raw);
         generateCode(line);
+    }
+    if (!text_section)
+    {
+        cout << "Erro sintático no arquivo assembly: Seção TEXT faltando" << endl;
+        exit(1);
     }
     cout << "Print machine code" << endl;
     cout << "Machine code: " << machine_code << endl;
