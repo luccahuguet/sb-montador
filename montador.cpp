@@ -202,25 +202,29 @@ void generateCode(string line)
         int address = 0;
         for (int i = 1; i <= opcode_table[tokens[0]][1] - 1; i++)
         {
-            // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
-            // if string tokens[i] contains a "+":
-            if (tokens[i].find("+") != string::npos)
+            // Verificar se o operando está na tabela de símbolos
+            if (symbol_table.find(tokens[i]) == symbol_table.end())
             {
-                string str = "";
-                str += tokens[i][0];
-                if (symbol_table.find(str) != symbol_table.end()) // X+2
+                cout << "Erro semântico na linha " << line_counter << ": Rótulo " << tokens[i] << " não definido" << endl;
+                exit(1);
+            }
+            else
+            {
+                // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
+                // if string tokens[i] contains a "+":
+                if (tokens[i].find("+") != string::npos)
                 {
+                    // Adicionar endereço do rótulo com a operação
+                    string str = "";
+                    str += tokens[i][0];
                     address = symbol_table[str];
                     str = "";
                     str += tokens[i][2];
                     machine_code += " " + to_string(address + stoi(str));
                 }
-            }
-            else
-            {
-                // Consultar tabela de símbolos
-                if (symbol_table.find(tokens[i]) != symbol_table.end())
+                else
                 {
+                    // Adicionar endereço do rótulo
                     machine_code += " " + to_string(symbol_table[tokens[i]]);
                 }
             }
