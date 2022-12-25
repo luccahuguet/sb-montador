@@ -42,6 +42,7 @@ unordered_map<string, int> directive_table = {
     {"ENDMACRO", 0}};
 
 bool first = true;
+bool text_section = false;
 
 void print_symbol_table()
 {
@@ -99,7 +100,31 @@ void updateSymbolTable(string line)
     {
         // cout << "updateSymbolTable init" << endl;
         string label = tokens[0].substr(0, tokens[0].length() - 1);
-        // cout << "label: " << label << endl;
+        // Checar erros léxicos (Caracteres especiais ou iniciado por número)
+        for(int c = 0; c < label.size(); c++)
+        {
+            // Checar se tem número como primeiro caractere do rótulo
+            if (c == 0)
+            {
+                if(label[c] >= 48 && label[c] <= 57)
+                {
+                    cout << "Erro léxico na linha " << line_counter << ": Rótulo iniciado com número" << endl;
+                    exit(1);    
+                }
+            }
+            // Checar se existe caractere especial no rótulo, exceto _
+            if(
+                !(
+                    (label[c] >= 48 && label[c] <= 57)||
+                    (label[c] >= 65 && label[c] <= 90) ||
+                    (label[c] >= 97 && label[c] <= 122)
+                ) && label[c] != 95
+            )
+            {
+                cout << "Erro léxico na linha " << line_counter << ": Rótulo com caracteres especiais" << endl;
+                exit(1);
+            }
+        }
 
         // Check if label already exists inside the symbol_table map
         if (symbol_table.find(label) != symbol_table.end())
@@ -179,6 +204,11 @@ void generateCode(string line)
     // Remover do vetor se o elemento for definição de rótulo
     if (tokens[0].back() == ':')
     {
+        if (tokens[1].back() == ':')
+        {
+            cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
+            exit(1);
+        }
         tokens.erase(tokens.begin());
     }
     // Esturura atual do vetor [Intrução, operando1, ...]
@@ -204,25 +234,29 @@ void generateCode(string line)
         int address = 0;
         for (int i = 1; i <= opcode_table[tokens[0]][1] - 1; i++)
         {
-            // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
-            // if string tokens[i] contains a "+":
-            if (tokens[i].find("+") != string::npos)
+            // Verificar se o operando está na tabela de símbolos
+            if (symbol_table.find(tokens[i]) == symbol_table.end())
             {
-                string str = "";
-                str += tokens[i][0];
-                if (symbol_table.find(str) != symbol_table.end()) // X+2
+                cout << "Erro semântico na linha " << line_counter << ": Rótulo " << tokens[i] << " não definido" << endl;
+                exit(1);
+            }
+            else
+            {
+                // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
+                // if string tokens[i] contains a "+":
+                if (tokens[i].find("+") != string::npos)
                 {
+                    // Adicionar endereço do rótulo com a operação
+                    string str = "";
+                    str += tokens[i][0];
                     address = symbol_table[str];
                     str = "";
                     str += tokens[i][2];
                     machine_code += " " + to_string(address + stoi(str));
                 }
-            }
-            else
-            {
-                // Consultar tabela de símbolos
-                if (symbol_table.find(tokens[i]) != symbol_table.end())
+                else
                 {
+                    // Adicionar endereço do rótulo
                     machine_code += " " + to_string(symbol_table[tokens[i]]);
                 }
             }
@@ -261,6 +295,12 @@ void generateCode(string line)
                 exit(1);
             }
         }
+        else if (tokens[0] == "SECTION"){
+            if (tokens.size() > 1)
+            {
+                if (tokens[1] == "TEXT") text_section = true;
+            }
+        }
     }
     else
     {
@@ -284,6 +324,11 @@ void segundaPassagem(string fname)
         // Remover comentários
         line = removeComments(line_raw);
         generateCode(line);
+    }
+    if (!text_section)
+    {
+        cout << "Erro sintático no arquivo assembly: Seção TEXT faltando" << endl;
+        exit(1);
     }
     cout << "Print machine code" << endl;
     cout << "Machine code: " << machine_code << endl;
