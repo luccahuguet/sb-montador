@@ -272,7 +272,7 @@ void segundaPassagem(string fname)
 {
     cout << "segundaPassagem init" << endl;
     string fname_asm = static_cast<string>(fname) + ".asm";
-    line_counter = 0;
+    line_counter = 1;
     // opens file
     ifstream file(fname_asm);
     string line_raw, line;
