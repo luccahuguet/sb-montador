@@ -92,36 +92,40 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void updateSymbolTable(string line)
+void updateSymbolTable(string line, string label = "")
 {
     // Split the line elements
     vector<string> tokens = splitString(line);
+    bool only_label = label != "";
     // Check if the first token is a label
 
-    if (tokens[0].back() == ':')
+    if (tokens[0].back() == ':') // Se o primeiro elemento da linha é um rótulo
     {
         // cout << "updateSymbolTable init" << endl;
-        string label = tokens[0].substr(0, tokens[0].length() - 1);
+        if (!only_label)
+        {
+            label = tokens[0].substr(0, tokens[0].length() - 1);
+        }
         // Checar erros léxicos (Caracteres especiais ou iniciado por número)
-        for(int c = 0; c < label.size(); c++)
+
+        for (int c = 0; c < label.size(); c++)
         {
             // Checar se tem número como primeiro caractere do rótulo
             if (c == 0)
             {
-                if(label[c] >= 48 && label[c] <= 57)
+                if (label[c] >= 48 && label[c] <= 57)
                 {
                     cout << "Erro léxico na linha " << line_counter << ": Rótulo iniciado com número" << endl;
                     exit(1);
                 }
             }
             // Checar se existe caractere especial no rótulo, exceto _
-            if(
+            if (
                 !(
-                    (label[c] >= 48 && label[c] <= 57)||
+                    (label[c] >= 48 && label[c] <= 57) ||
                     (label[c] >= 65 && label[c] <= 90) ||
-                    (label[c] >= 97 && label[c] <= 122)
-                ) && label[c] != 95
-            )
+                    (label[c] >= 97 && label[c] <= 122)) &&
+                label[c] != 95)
             {
                 cout << "Erro léxico na linha " << line_counter << ": Rótulo com caracteres especiais" << endl;
                 exit(1);
@@ -145,28 +149,32 @@ void updateSymbolTable(string line)
         cout << tokens[i] << " ";
     }
 
-    // Incrementar valores dos contadores
-    line_counter++;
+    if (!only_label)
+    {
 
-    if (opcode_table.find(tokens[0]) != opcode_table.end())
-    {
-        memory += opcode_table[tokens[0]][1];
-    }
-    else if (directive_table.find(tokens[0]) != directive_table.end())
-    {
-        if (tokens[0] == "SPACE")
+        // Incrementar valores dos contadores
+        line_counter++;
+
+        if (opcode_table.find(tokens[0]) != opcode_table.end())
         {
-            if (tokens.size() == 1)
+            memory += opcode_table[tokens[0]][1];
+        }
+        else if (directive_table.find(tokens[0]) != directive_table.end())
+        {
+            if (tokens[0] == "SPACE")
             {
-                memory += 1;
+                if (tokens.size() == 1)
+                {
+                    memory += 1;
+                }
+                else
+                {
+                    memory += stoi(tokens[1]);
+                }
             }
             else
-            {
-                memory += stoi(tokens[1]);
-            }
+                memory += directive_table[tokens[0]];
         }
-        else
-            memory += directive_table[tokens[0]];
     }
 }
 
@@ -190,8 +198,18 @@ void primeiraPassagem(string fname)
         { // cout << "after removeComments" << endl;
             cout << endl;
 
-            // creates a symbol table
-            updateSymbolTable(line);
+            // checks if the last non space character is a colon and if there is a token before it
+            if (line.find_last_not_of(" \t\n") == line.find(':') && line.find(':') != 0)
+            {
+                cout << "only Label found";
+                // creates a symbol table
+                updateSymbolTable(line, line.substr(0, line.find(':')));
+            }
+            else
+            {
+                // creates a symbol table
+                updateSymbolTable(line);
+            }
         }
     }
     cout << "Primeira passagem FIM" << endl;
@@ -206,13 +224,10 @@ void generateCode(string line)
     // Remover do vetor se o elemento for definição de rótulo
     if (tokens[0].back() == ':')
     {
-        if(tokens.size() > 1)
+        if (tokens.size() > 1 && tokens[1].back() == ':')
         {
-            if (tokens[1].back() == ':')
-            {
-                cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
-                exit(1);
-            }
+            cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
+            exit(1);
         }
         tokens.erase(tokens.begin());
     }
@@ -300,10 +315,12 @@ void generateCode(string line)
                 exit(1);
             }
         }
-        else if (tokens[0] == "SECTION"){
+        else if (tokens[0] == "SECTION")
+        {
             if (tokens.size() > 1)
             {
-                if (tokens[1] == "TEXT") text_section = true;
+                if (tokens[1] == "TEXT")
+                    text_section = true;
             }
         }
     }
