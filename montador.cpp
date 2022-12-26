@@ -9,6 +9,7 @@ using namespace std;
 
 void primeiraPassagem(string fname);
 void segundaPassagem(string fname);
+void ifequ(string fname);
 vector<string> splitString(string input);
 string removeComments(string input);
 
@@ -16,6 +17,7 @@ int memory = 0;
 int line_counter = 1;
 string machine_code = "";
 unordered_map<string, int> symbol_table;
+unordered_map<string, int> equ_table;
 unordered_map<string, vector<int>> opcode_table = {
     {"ADD", {1, 2}},
     {"SUB", {2, 2}},
@@ -43,6 +45,7 @@ unordered_map<string, int> directive_table = {
 
 bool first = true;
 bool text_section = false;
+bool jump_line = false;  // Operador booleano usado no pré-processamento de IF
 
 void print_symbol_table()
 {
@@ -65,11 +68,10 @@ int main(int argc, char **argv)
             cout << "Processamento de EQU e IF. Extensão de saída PRE" << endl;
             cout << endl;
 
-            primeiraPassagem(argv[2]);
+            ifequ(argv[2]);
 
             cout << endl;
             cout << endl;
-            print_symbol_table();
         }
         else if (strncmp(argv[1], "-m", 2) == 0)
         {
@@ -109,7 +111,7 @@ void updateSymbolTable(string line)
                 if(label[c] >= 48 && label[c] <= 57)
                 {
                     cout << "Erro léxico na linha " << line_counter << ": Rótulo iniciado com número" << endl;
-                    exit(1);    
+                    exit(1);
                 }
             }
             // Checar se existe caractere especial no rótulo, exceto _
@@ -383,3 +385,104 @@ string removeComments(string input)
     }
     return result;
 }
+
+/*
+    Pré-processamento. A partir daqui estão implementadas as funções para pré-processamento
+*/
+
+// IF e EQU
+string ifequprocessing(string line)  // Recebe a linha sem comentários, realiza o pré processamento e escreve no arquivo de saída
+{
+    // Split the line elements
+    vector<string> tokens = splitString(line);
+    int n_elements = tokens.size();
+    bool foundequ = false;  // Indica se a linha vai ser escrita no novo arquivo .pre
+    string pre_line = "";
+
+    // Checa jump_line em caso de IF 0
+    if(jump_line)
+    {
+        if(tokens[0] != "IF")
+        {
+            jump_line = false;
+        }
+        return "";
+    }
+    else
+    {
+        // Verifica se o elemento é IF
+        if (tokens[0] == "IF")
+        {
+            if(n_elements > 1)
+            {
+                // Verifica valor do rótulo definido anteriormente
+                if(equ_table[tokens[1]] == 0)
+                {
+                    jump_line = true;  // Indica o pulo de linha para a próxima
+                }
+            }
+            return "";
+        }
+
+        // Checa se tem definição de rótulo
+        if (tokens[0].back() == ':' && n_elements > 1 && tokens[1] == "EQU")
+        {
+            if(n_elements == 3)
+            {
+                // Salva valor do rótulo definido pelo EQU
+                equ_table[tokens[0].substr(0, tokens[0].length() - 1)] = stoi(tokens[2]);
+                return "";
+            }
+            else
+            {
+                cout << "EQU incorreto" << endl;
+                exit(1);
+            }
+        }
+
+        for(int i = 0; i < n_elements; i++)
+        {
+            if(equ_table.find(tokens[i]) != equ_table.end())
+            {
+                foundequ = true;
+                tokens[i] = to_string(equ_table[tokens[i]]);
+            }
+            // Adicionar à string
+            if(i == 0) pre_line += tokens[0];
+            else pre_line += " " + tokens[i];
+        }
+
+        if(foundequ)  return pre_line;
+        return line;
+    }
+
+}
+
+void ifequ(string fname)
+{
+    cout << "Pré-processamento para IF e EQU" << endl;
+    string fname_asm = static_cast<string>(fname) + ".asm";
+
+    ifstream file(fname_asm);  // Arquivo .asm de entrada
+    string line_raw, file_line;
+
+    ofstream outfile(static_cast<string>(fname) + ".pre");  // Arquivo .pre de saída com os comentários removidos e pré-processamento de IF e EQU
+
+    while (getline(file, line_raw))
+    {
+        // separa a linha em rótulo, operação, operandos, comentários
+        string line = removeComments(line_raw);
+        if (line.find_first_not_of(" \t\n") != std::string::npos)
+        {
+            // Realiza pré-processamento da linha
+            file_line = ifequprocessing(line);
+            if(file_line != "")
+            {
+                //write to file
+                outfile << file_line << endl;
+            }
+        }
+    }
+}
+
+// MACRO
