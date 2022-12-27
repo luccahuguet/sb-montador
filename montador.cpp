@@ -558,6 +558,7 @@ string macroProcessing(string line)
     vector<string> tokens = splitString(line);
     int n_elements = tokens.size();
     string pre_line = "";
+    pair<string, string> argument;
     if(insideMacro)
     {
         if(tokens[0] == "ENDMACRO")
@@ -583,7 +584,8 @@ string macroProcessing(string line)
                 macro1.n_arguments = n_elements - 2;
                 for(int i = 2; i < tokens.size(); i++)  // Salva o nome dos argumentos definidos
                 {
-                    macro1.arg_map[i-2].first = tokens[i];
+                    argument.first = tokens[i];
+                    macro1.arg_map.push_back(argument);
                 }
             }
             else
@@ -592,7 +594,8 @@ string macroProcessing(string line)
                 macro2.n_arguments = n_elements - 2;
                 for(int i = 2; i < tokens.size(); i++)  // Salva o nome dos argumentos definidos
                 {
-                    macro2.arg_map[i-2].first = tokens[i];
+                    argument.first = tokens[i];
+                    macro2.arg_map.push_back(argument);
                 }
             }
         }
@@ -633,11 +636,11 @@ string writeMacro(vector<string> elements, Macro macroobj)
         {
             for(int a = 0; a < macroobj.arg_map.size(); a++)
             {
-                if(instruction_elements[i] == macroobj.arg_map[i].first)
+                if(instruction_elements[j] == macroobj.arg_map[a].first)
                 {
                     if(!foundarg) foundarg = true;
                     // Substituir argumento
-                    instruction_elements[j] = macroobj.arg_map[i].second;
+                    instruction_elements[j] = macroobj.arg_map[a].second;
                     break;
                 }
             }
