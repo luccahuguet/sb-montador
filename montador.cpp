@@ -645,43 +645,55 @@ string writeMacro(vector<string> elements, Macro macroobj)
                 }
             }
         }
-        // Adicionar a linha a string final
-        if(foundarg)  // Ocorreu alteração
+
+        // Caso seja chamada de macro dentro da macro
+        if(instruction_elements[0] == macro1.name)
         {
-            foundarg = false;
-            for(int e = 0; e < line_size; e++)
+            instructions += writeMacro(instruction_elements, macro1);
+        }  
+        else if(instruction_elements[0] == macro2.name)
+        {
+            instructions += writeMacro(instruction_elements, macro2);
+        }
+        else{
+            // Adicionar a linha a string final
+            if(foundarg)  // Ocorreu alteração
             {
-                if(instruction_elements[e] == "COPY")
+                foundarg = false;
+                for(int e = 0; e < line_size; e++)
                 {
-                    if(e != 0) instructions += " ";
-                    if(line_size >= 3)
+                    if(instruction_elements[e] == "COPY")
                     {
-                        instructions += instruction_elements[e] + " " + instruction_elements[e+1] + "," + instruction_elements[e+2] + "\n";
+                        if(e != 0) instructions += " ";
+                        if(line_size >= 3)
+                        {
+                            instructions += instruction_elements[e] + " " + instruction_elements[e+1] + "," + instruction_elements[e+2] + "\n";
+                        }
+                        else
+                        {
+                            if(e != line_size - 1)
+                            {
+                                instructions += instruction_elements[e] + " " + instruction_elements[e+1] + "\n";
+                            }
+                            else
+                                {
+                                    instructions += instruction_elements[e] + "\n";
+                                }
+                        }
+                        break;
                     }
                     else
                     {
-                        if(e != line_size - 1)
-                        {
-                            instructions += instruction_elements[e] + " " + instruction_elements[e+1] + "\n";
-                        }
-                        else
-                            {
-                                instructions += instruction_elements[e] + "\n";
-                            }
+                        if(e != 0) instructions += " ";
+                        instructions += instruction_elements[e];
+                        if(e == line_size - 1) instructions += "\n";
                     }
-                    continue;
-                }
-                else
-                {
-                    if(e != 0) instructions += " ";
-                    instructions += instruction_elements[e];
-                    if(e == line_size - 1) instructions += "\n";
                 }
             }
-        }
-        else  // Não teve substituição
-        {
-            instructions += macroobj.lines[i] + "\n";
+            else  // Não teve substituição
+            {
+                instructions += macroobj.lines[i] + "\n";
+            }
         }
     }
 
