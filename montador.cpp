@@ -162,12 +162,6 @@ void updateSymbolTable(string line, string label = "")
         tokens.erase(tokens.begin());
     }
 
-    // print every element of the array
-    for (int i = 0; i < tokens.size(); i++)
-    {
-        cout << tokens[i] << " ";
-    }
-
     if (!only_label)
     {
 
@@ -200,17 +194,14 @@ void updateSymbolTable(string line, string label = "")
 void primeiraPassagem(string fname)
 {
     cout << "primeiraPassagem init" << endl;
-    string fname_asm = static_cast<string>(fname) + ".asm";
+    string fname_asm = static_cast<string>(fname) + ".mcr";
 
     // opens file
     ifstream file2(fname_asm);
     string line_raw;
 
-    cout << "while init" << endl;
-
     while (getline(file2, line_raw))
     {
-        cout << endl;
         // separa a linha em rótulo, operação, operandos, comentários
 
         if (line_raw.find_first_not_of(" \t\n") != std::string::npos)
@@ -218,7 +209,6 @@ void primeiraPassagem(string fname)
             // checks if the last non space character is a colon and if there is a token before it
             if (line_raw.find_last_not_of(" \t\n") == line_raw.find(':') && line_raw.find(':') != 0)
             {
-                cout << "only Label found";
                 // creates a symbol table
                 updateSymbolTable(line_raw, line_raw.substr(0, line_raw.find(':')));
             }
@@ -359,7 +349,7 @@ void generateCode(string line)
 void segundaPassagem(string fname)
 {
     cout << "segundaPassagem init" << endl;
-    string fname_asm = static_cast<string>(fname) + ".asm";
+    string fname_asm = static_cast<string>(fname) + ".mcr";
     line_counter = 1;
     // opens file
     ifstream file(fname_asm);
@@ -379,6 +369,9 @@ void segundaPassagem(string fname)
     }
     cout << "Print machine code" << endl;
     cout << "Machine code: " << machine_code << endl;
+    ofstream outfile(static_cast<string>(fname) + ".obj");
+    outfile << machine_code;
+    cout << "Arquivo objeto gerado" << endl;
 }
 
 vector<string> splitString(string input)
