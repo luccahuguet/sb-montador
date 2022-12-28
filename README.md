@@ -3,7 +3,8 @@ Repositório para o trabalho 1 da disciplina de Software Básico 2022.2, UnB
 
 ## Integrantes
 **Marcelo Aiache Postiglione - 180126652**
-**Aluno - matrícula**
+
+**Lucca Beserra Huguet - 160013259**
 
 ## Sistema operacional utilizado
 Kali GNU/Linux Rolling          
