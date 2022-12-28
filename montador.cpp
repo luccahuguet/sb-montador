@@ -209,24 +209,22 @@ void primeiraPassagem(string fname)
 
     while (getline(file2, line_raw))
     {
+        cout << endl;
         // separa a linha em rótulo, operação, operandos, comentários
 
-        string line = removeComments(line_raw);
-        if (line.find_first_not_of(" \t\n") != std::string::npos)
-        { // cout << "after removeComments" << endl;
-            cout << endl;
-
+        if (line_raw.find_first_not_of(" \t\n") != std::string::npos)
+        {
             // checks if the last non space character is a colon and if there is a token before it
-            if (line.find_last_not_of(" \t\n") == line.find(':') && line.find(':') != 0)
+            if (line_raw.find_last_not_of(" \t\n") == line_raw.find(':') && line_raw.find(':') != 0)
             {
                 cout << "only Label found";
                 // creates a symbol table
-                updateSymbolTable(line, line.substr(0, line.find(':')));
+                updateSymbolTable(line_raw, line_raw.substr(0, line_raw.find(':')));
             }
             else
             {
                 // creates a symbol table
-                updateSymbolTable(line);
+                updateSymbolTable(line_raw);
             }
         }
     }
@@ -250,104 +248,106 @@ void generateCode(string line)
         tokens.erase(tokens.begin());
     }
     // Esturura atual do vetor [Intrução, operando1, ...]
-
-    // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
-    if (opcode_table.find(tokens[0]) != opcode_table.end())
-    {
-        // Checa número de argumentos passados
-        if (tokens.size() != (opcode_table[tokens[0]][1]))
+    if(tokens.size() > 0)  // Considerar caso de apenas rótulo na linha
+    {    
+        // Consultar operação na tabela de opcodes(Erro de instrução inexistente)
+        if (opcode_table.find(tokens[0]) != opcode_table.end())
         {
-            cout << "Erro sintático na linha " << line_counter << ": Número errado de argumentos" << endl;
-            exit(1);
-        }
-        if (first)
-        {
-            machine_code += to_string(opcode_table[tokens[0]][0]);
-            first = false;
-        }
-        else
-            machine_code += " " + to_string(opcode_table[tokens[0]][0]);
-
-        // Checar argumentos
-        int address = 0;
-        for (int i = 1; i <= opcode_table[tokens[0]][1] - 1; i++)
-        {
-            // Verificar se o operando está na tabela de símbolos
-            if (symbol_table.find(tokens[i]) == symbol_table.end())
+            // Checa número de argumentos passados
+            if (tokens.size() != (opcode_table[tokens[0]][1]))
             {
-                cout << "Erro semântico na linha " << line_counter << ": Rótulo " << tokens[i] << " não definido" << endl;
+                cout << "Erro sintático na linha " << line_counter << ": Número errado de argumentos" << endl;
                 exit(1);
             }
-            else
+            if (first)
             {
-                // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
-                // if string tokens[i] contains a "+":
-                if (tokens[i].find("+") != string::npos)
+                machine_code += to_string(opcode_table[tokens[0]][0]);
+                first = false;
+            }
+            else
+                machine_code += " " + to_string(opcode_table[tokens[0]][0]);
+
+            // Checar argumentos
+            int address = 0;
+            for (int i = 1; i <= opcode_table[tokens[0]][1] - 1; i++)
+            {
+                // Verificar se o operando está na tabela de símbolos
+                if (symbol_table.find(tokens[i]) == symbol_table.end())
                 {
-                    // Adicionar endereço do rótulo com a operação
-                    string str = "";
-                    str += tokens[i][0];
-                    address = symbol_table[str];
-                    str = "";
-                    str += tokens[i][2];
-                    machine_code += " " + to_string(address + stoi(str));
+                    cout << "Erro semântico na linha " << line_counter << ": Rótulo " << tokens[i] << " não definido" << endl;
+                    exit(1);
                 }
                 else
                 {
-                    // Adicionar endereço do rótulo
-                    machine_code += " " + to_string(symbol_table[tokens[i]]);
+                    // Verificar se tem operação. Exemplo: LOAD X+1, INPUT X+1 ... X: SPACE 2
+                    // if string tokens[i] contains a "+":
+                    if (tokens[i].find("+") != string::npos)
+                    {
+                        // Adicionar endereço do rótulo com a operação
+                        string str = "";
+                        str += tokens[i][0];
+                        address = symbol_table[str];
+                        str = "";
+                        str += tokens[i][2];
+                        machine_code += " " + to_string(address + stoi(str));
+                    }
+                    else
+                    {
+                        // Adicionar endereço do rótulo
+                        machine_code += " " + to_string(symbol_table[tokens[i]]);
+                    }
                 }
             }
         }
-    }
-    else if (directive_table.find(tokens[0]) != directive_table.end())
-    {
-        // Se for diretiva, checar se é CONST ou SPACE
-        if (tokens[0] == "CONST")
+        else if (directive_table.find(tokens[0]) != directive_table.end())
         {
-            if (tokens.size() != 2)
+            // Se for diretiva, checar se é CONST ou SPACE
+            if (tokens[0] == "CONST")
             {
-                cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
-                exit(1);
+                if (tokens.size() != 2)
+                {
+                    cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
+                    exit(1);
+                }
+                // CONST, adicionar valor ao código
+                machine_code += " " + tokens[1];
             }
-            // CONST, adicionar valor ao código
-            machine_code += " " + tokens[1];
-        }
-        else if (tokens[0] == "SPACE")
-        {
-            // verificar numero de argumentos do space
-            if (tokens.size() == 1)
+            else if (tokens[0] == "SPACE")
             {
-                machine_code += " 0";
-            }
-            else if (tokens.size() == 2)
-            {
-                for (int i = 0; i < stoi(tokens[1]); i++)
+                // verificar numero de argumentos do space
+                if (tokens.size() == 1)
                 {
                     machine_code += " 0";
                 }
+                else if (tokens.size() == 2)
+                {
+                    for (int i = 0; i < stoi(tokens[1]); i++)
+                    {
+                        machine_code += " 0";
+                    }
+                }
+                else
+                {
+                    cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
+                    exit(1);
+                }
             }
-            else
+            else if (tokens[0] == "SECTION")
             {
-                cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
-                exit(1);
+                if (tokens.size() > 1)
+                {
+                    if (tokens[1] == "TEXT")
+                        text_section = true;
+                }
             }
         }
-        else if (tokens[0] == "SECTION")
+        else
         {
-            if (tokens.size() > 1)
-            {
-                if (tokens[1] == "TEXT")
-                    text_section = true;
-            }
+            cout << "Erro semântico na linha " << line_counter << ": Instrução inexistente" << endl;
+            exit(1);
         }
+        line_counter++;
     }
-    else
-    {
-        cout << "Erro semântico na linha " << line_counter << ": Instrução inexistente" << endl;
-        exit(1);
-    }
-    line_counter++;
 }
 
 void segundaPassagem(string fname)
@@ -357,13 +357,14 @@ void segundaPassagem(string fname)
     line_counter = 1;
     // opens file
     ifstream file(fname_asm);
-    string line_raw, line;
+    string line_raw;
 
     while (getline(file, line_raw))
     {
-        // Remover comentários
-        line = removeComments(line_raw);
-        generateCode(line);
+        if (line_raw.find_first_not_of(" \t\n") != std::string::npos)
+        {
+            generateCode(line_raw);
+        }
     }
     if (!text_section)
     {
@@ -559,7 +560,7 @@ string macroProcessing(string line)
     int n_elements = tokens.size();
     string pre_line = "";
     pair<string, string> argument;
-    if(insideMacro)
+    if(insideMacro)  // Está no modo de salvar definição de macro
     {
         if(tokens[0] == "ENDMACRO")
         {
