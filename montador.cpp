@@ -310,6 +310,11 @@ void generateCode(string line)
                     cout << "Erro sintático na linha" << line_counter << ": Número errado de argumentos";
                     exit(1);
                 }
+                // Checar se é hexadecimal e converter para decimal
+                if(tokens[1][0] == '0' && tokens[1][1] == 'X')
+                {
+                    tokens[1] = to_string(stoi(tokens[1].substr(2, tokens[1].length() - 1), nullptr, 16));
+                }
                 // CONST, adicionar valor ao código
                 machine_code += " " + tokens[1];
             }
