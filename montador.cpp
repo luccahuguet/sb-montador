@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <unordered_map>
+#include <ctype.h>
 
 using namespace std;
 
@@ -416,7 +417,7 @@ string removeComments(string input)
         }
         else
         {
-            result += input[i];
+            result += toupper(input[i]);  // Já adiciona convertendo para maiúsculo. Feito para atender a especificação de não ser case sensitive
         }
     }
     return result;
