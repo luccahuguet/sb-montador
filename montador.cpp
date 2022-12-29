@@ -35,6 +35,7 @@ unordered_map<string, vector<int>> opcode_table = {
     {"ADD", {1, 2}},
     {"SUB", {2, 2}},
     {"MULT", {3, 2}},
+    {"MUL", {3, 2}},
     {"DIV", {4, 2}},
     {"JMP", {5, 2}},
     {"JMPN", {6, 2}},
