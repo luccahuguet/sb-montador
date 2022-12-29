@@ -30,7 +30,7 @@ $ ./montador -p exemplo
 
 Esse modo irá gerar um arquivo com mesmo nome só que com extensão ".pre". Para este exemplo o arquivo de saída gerado vai ser "exemplo.pre".
 
-Obervação importante: Para o bom funcionamento das próximas funcionalidades, principalmente para a geração do código objeto, é necessária a passagem por esse modo, pois aqui são retirados os cometários e o tratamento para não ser case sensitive.
+Obervação importante: Para o bom funcionamento das próximas funcionalidades, principalmente para a geração do código objeto, é necessária a passagem por esse modo, pois aqui são retirados os cometários e o tratamento para não ser case sensitive .
 
 ### Processamento de MACROS
 O modo de operação para processamento de MACROS é chamado pela flag "-m" e recebe como argumento o nome de um arquivo de extensão .pre, gerado pelo modo de IF e EQU. Por exemplo, para executar esse modo de operação para um arquivo chamado "exemplo.pre" que esteja presente no mesmo diretório de onde está sendo chamado o programa montador, digite o seguinte comando:
