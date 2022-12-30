@@ -62,6 +62,7 @@ bool text_section = false;
 bool jump_line = false;  // Operador booleano usado no pré-processamento de IF
 bool insideMacro = false;  // Variável para saber se está dentro de macro na hora que estiver salvando
 bool defined = false; // Saber em qual macro salvar
+bool symbol_break = false;
 
 Macro macro1, macro2;
 
@@ -125,6 +126,11 @@ void updateSymbolTable(string line, string label = "")
         if (!only_label)
         {
             label = tokens[0].substr(0, tokens[0].length() - 1);
+            if(symbol_break == true) // Checar no caso de enter após o rótulo se a linha se inicia com outro rótulo
+            {
+                cout << "Erro sintático na linha " << line_counter << ": Duas definições de rótulo na mesma linha" << endl;
+                exit(1);
+            }
         }
         // Checar erros léxicos (Caracteres especiais ou iniciado por número)
 
@@ -162,13 +168,15 @@ void updateSymbolTable(string line, string label = "")
         symbol_table[label] = memory;
         tokens.erase(tokens.begin());
     }
+    else
+    {
+        if(symbol_break) symbol_break = false;
+    }
 
+    // Incrementar valores dos contadores
+    line_counter++;
     if (!only_label)
     {
-
-        // Incrementar valores dos contadores
-        line_counter++;
-
         if (opcode_table.find(tokens[0]) != opcode_table.end())
         {
             memory += opcode_table[tokens[0]][1];
@@ -203,13 +211,12 @@ void primeiraPassagem(string fname)
 
     while (getline(file2, line_raw))
     {
-        // separa a linha em rótulo, operação, operandos, comentários
-
         if (line_raw.find_first_not_of(" \t\n") != std::string::npos)
         {
             // checks if the last non space character is a colon and if there is a token before it
             if (line_raw.find_last_not_of(" \t\n") == line_raw.find(':') && line_raw.find(':') != 0)
             {
+                symbol_break = true;
                 // creates a symbol table
                 updateSymbolTable(line_raw, line_raw.substr(0, line_raw.find(':')));
             }
@@ -343,8 +350,8 @@ void generateCode(string line)
             cout << "Erro semântico na linha " << line_counter << ": Instrução inexistente" << endl;
             exit(1);
         }
-        line_counter++;
     }
+    line_counter++;
 }
 
 void segundaPassagem(string fname)
