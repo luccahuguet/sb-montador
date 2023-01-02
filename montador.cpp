@@ -309,7 +309,7 @@ void generateCode(string line)
                     exit(1);
                 }
                 // Checar se é hexadecimal e converter para decimal
-                if(tokens[1][0] == '0' && tokens[1][1] == 'X')
+                if(tokens[1][0] == '0' && (tokens[1][1] == 'X' || tokens[1][1] == 'x'))
                 {
                     tokens[1] = to_string(stoi(tokens[1].substr(2, tokens[1].length() - 1), nullptr, 16));
                 }
